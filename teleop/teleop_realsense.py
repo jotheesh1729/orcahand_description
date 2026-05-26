@@ -19,7 +19,8 @@ import cv2
 import mujoco
 import mujoco.viewer
 import mediapipe as mp
-import pyrealsense2 as rs
+
+CAMERA_INDEX = 1  # 0 = MacBook webcam, 1 = D455 color stream
 
 SCENE_XML = "v1/scene_right.xml"
 MODEL_PATH = "teleop/hand_landmarker.task"
@@ -122,21 +123,19 @@ def camera_thread(model):
         min_tracking_confidence=0.5,
     )
 
-    pipeline = rs.pipeline()
-    cfg = rs.config()
-    cfg.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-    pipeline.start(cfg)
+    cap = cv2.VideoCapture(CAMERA_INDEX)
+    if not cap.isOpened():
+        print(f"[camera] ERROR: could not open camera index {CAMERA_INDEX}")
+        return
 
-    print("[camera] RealSense started. Show your right hand. Press q to quit.")
+    print("[camera] D455 started. Show your right hand. Press q to quit.")
     with HandLandmarker.create_from_options(options) as landmarker:
         try:
             while True:
-                frames = pipeline.wait_for_frames()
-                color_frame = frames.get_color_frame()
-                if not color_frame:
+                ok, img = cap.read()
+                if not ok:
                     continue
 
-                img = np.asanyarray(color_frame.get_data())
                 h, w = img.shape[:2]
                 rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -150,11 +149,11 @@ def camera_thread(model):
                         _latest_ctrl = ctrl
                     _draw_landmarks(img, lms, w, h)
 
-                cv2.imshow("RealSense — Hand Tracking (q to quit)", img)
+                cv2.imshow("D455 — Hand Tracking (q to quit)", img)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
         finally:
-            pipeline.stop()
+            cap.release()
             cv2.destroyAllWindows()
 
 
