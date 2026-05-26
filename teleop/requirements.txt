@@ -1,0 +1,5 @@
+mujoco>=3.0.0
+mediapipe>=0.10.0
+pyrealsense2>=2.54.0
+opencv-python>=4.5.0
+numpy>=1.21.0
