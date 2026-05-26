@@ -15,12 +15,13 @@ import numpy as np
 import cv2
 import mujoco
 import mujoco.viewer
-import mediapipe as mp
+from mediapipe.python.solutions import hands as mp_hands
+from mediapipe.python.solutions import drawing_utils as mp_draw
 import pyrealsense2 as rs
 
 SCENE_XML = "v1/scene_right.xml"
 
-LM = mp.solutions.hands.HandLandmark
+LM = mp_hands.HandLandmark
 
 
 def _angle_at(a, b, c):
@@ -95,13 +96,12 @@ def camera_thread(model):
     cfg.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
     pipeline.start(cfg)
 
-    hands = mp.solutions.hands.Hands(
+    hands = mp_hands.Hands(
         static_image_mode=False,
         max_num_hands=1,
         min_detection_confidence=0.7,
         min_tracking_confidence=0.5,
     )
-    draw = mp.solutions.drawing_utils
 
     print("[camera] RealSense started. Show your right hand. Press q to quit.")
     try:
@@ -119,8 +119,8 @@ def camera_thread(model):
                 ctrl = landmarks_to_ctrl(lms, model)
                 with _ctrl_lock:
                     _latest_ctrl = ctrl
-                draw.draw_landmarks(img, result.multi_hand_landmarks[0],
-                                    mp.solutions.hands.HAND_CONNECTIONS)
+                mp_draw.draw_landmarks(img, result.multi_hand_landmarks[0],
+                                       mp_hands.HAND_CONNECTIONS)
 
             cv2.imshow("RealSense — Hand Tracking (q to quit)", img)
             if cv2.waitKey(1) & 0xFF == ord("q"):
