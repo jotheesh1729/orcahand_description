@@ -22,7 +22,7 @@ import mediapipe as mp
 
 CAMERA_INDEX = 1  # 0 = MacBook webcam, 1 = D455 color stream
 
-SCENE_XML = "v1/scene_right.xml"
+SCENE_XML = "v2/scene_right.xml"
 MODEL_PATH = "teleop/hand_landmarker.task"
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/"
@@ -76,20 +76,20 @@ def landmarks_to_ctrl(lms, model):
             lo, hi = model.actuator_ctrlrange[idx]
             ctrl[idx] = float(np.clip(value, lo, hi))
 
-    set_act("right_index_mcp_actuator",  _flex(_angle_at(lms[WRIST],      lms[INDEX_MCP],  lms[INDEX_PIP])))
-    set_act("right_index_pip_actuator",  _flex(_angle_at(lms[INDEX_MCP],  lms[INDEX_PIP],  lms[INDEX_DIP])))
+    set_act("right_i-mcp_actuator", _flex(_angle_at(lms[WRIST],      lms[INDEX_MCP],  lms[INDEX_PIP])))
+    set_act("right_i-pip_actuator", _flex(_angle_at(lms[INDEX_MCP],  lms[INDEX_PIP],  lms[INDEX_DIP])))
 
-    set_act("right_middle_mcp_actuator", _flex(_angle_at(lms[WRIST],      lms[MIDDLE_MCP], lms[MIDDLE_PIP])))
-    set_act("right_middle_pip_actuator", _flex(_angle_at(lms[MIDDLE_MCP], lms[MIDDLE_PIP], lms[MIDDLE_DIP])))
+    set_act("right_m-mcp_actuator", _flex(_angle_at(lms[WRIST],      lms[MIDDLE_MCP], lms[MIDDLE_PIP])))
+    set_act("right_m-pip_actuator", _flex(_angle_at(lms[MIDDLE_MCP], lms[MIDDLE_PIP], lms[MIDDLE_DIP])))
 
-    set_act("right_ring_mcp_actuator",   _flex(_angle_at(lms[WRIST],      lms[RING_MCP],   lms[RING_PIP])))
-    set_act("right_ring_pip_actuator",   _flex(_angle_at(lms[RING_MCP],   lms[RING_PIP],   lms[RING_DIP])))
+    set_act("right_r-mcp_actuator", _flex(_angle_at(lms[WRIST],      lms[RING_MCP],   lms[RING_PIP])))
+    set_act("right_r-pip_actuator", _flex(_angle_at(lms[RING_MCP],   lms[RING_PIP],   lms[RING_DIP])))
 
-    set_act("right_pinky_mcp_actuator",  _flex(_angle_at(lms[WRIST],      lms[PINKY_MCP],  lms[PINKY_PIP])))
-    set_act("right_pinky_pip_actuator",  _flex(_angle_at(lms[PINKY_MCP],  lms[PINKY_PIP],  lms[PINKY_DIP])))
+    set_act("right_p-mcp_actuator", _flex(_angle_at(lms[WRIST],      lms[PINKY_MCP],  lms[PINKY_PIP])))
+    set_act("right_p-pip_actuator", _flex(_angle_at(lms[PINKY_MCP],  lms[PINKY_PIP],  lms[PINKY_DIP])))
 
-    set_act("right_thumb_pip_actuator",  _flex(_angle_at(lms[THUMB_CMC],  lms[THUMB_MCP],  lms[THUMB_IP])))
-    set_act("right_thumb_dip_actuator",  _flex(_angle_at(lms[THUMB_MCP],  lms[THUMB_IP],   lms[THUMB_TIP])))
+    set_act("right_t-mcp_actuator", _flex(_angle_at(lms[THUMB_CMC],  lms[THUMB_MCP],  lms[THUMB_IP])))
+    set_act("right_t-pip_actuator", _flex(_angle_at(lms[THUMB_MCP],  lms[THUMB_IP],   lms[THUMB_TIP])))
 
     return ctrl
 
