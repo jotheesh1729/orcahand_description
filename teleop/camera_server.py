@@ -6,6 +6,7 @@ Reads D455, runs MediaPipe, shows preview, sends joint angles via UDP.
     python teleop/camera_server.py
 """
 
+import sys
 import socket
 import time
 import os
@@ -15,15 +16,14 @@ import cv2
 import mediapipe as mp
 import mujoco
 
-SCENE_XML   = "v2/scene_right.xml"
-MODEL_PATH  = "teleop/hand_landmarker.task"
-MODEL_URL   = (
+SCENE_XML  = "v2/scene_right.xml"
+MODEL_PATH = "teleop/hand_landmarker.task"
+MODEL_URL  = (
     "https://storage.googleapis.com/mediapipe-models/"
     "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 )
-CAMERA_INDEX = 1       # 0 = MacBook webcam, 1 = D455
-UDP_HOST     = "127.0.0.1"
-UDP_PORT     = 5005
+UDP_HOST = "127.0.0.1"
+UDP_PORT = 5005
 
 # ── Landmark indices ──────────────────────────────────────────────────────────
 WRIST = 0
@@ -145,7 +145,25 @@ def _draw(img, lms, w, h):
         cv2.circle(img, (x, y), 4, (0, 0, 255), -1)
 
 
+def _auto_detect_camera():
+    """Try indices 0-4 and return the first one that opens."""
+    for i in range(5):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            cap.release()
+            return i
+    return None
+
+
 def main():
+    camera_index = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    if camera_index is None:
+        camera_index = _auto_detect_camera()
+        if camera_index is None:
+            print("[camera] ERROR: no camera found. Plug in a camera and try again.")
+            return
+        print(f"[camera] Auto-detected camera at index {camera_index}")
+
     _ensure_model()
 
     model = mujoco.MjModel.from_xml_path(SCENE_XML)
@@ -164,10 +182,11 @@ def main():
         min_tracking_confidence=0.5,
     )
 
-    cap = cv2.VideoCapture(CAMERA_INDEX)
+    cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
-        print(f"[camera] ERROR: could not open camera index {CAMERA_INDEX}")
+        print(f"[camera] ERROR: could not open camera index {camera_index}")
         return
+    print(f"[camera] Using camera index {camera_index}")
 
     print("[camera] Started. Show your right hand. Press q to quit.")
     with HandLandmarker.create_from_options(options) as landmarker:
