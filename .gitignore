@@ -66,3 +66,7 @@ ehthumbs.db
 tests/__pycache__/*
 
 *.pyc
+
+# Local project context (not for git)
+CONTEXT.md
+teleop/hand_landmarker.task
