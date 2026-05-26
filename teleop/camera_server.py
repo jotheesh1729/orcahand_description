@@ -66,24 +66,33 @@ def _flex(deg):
 
 
 def _palm_frame(lms):
-    """Returns (normal, index_dir) as unit vectors in landmark space."""
+    """
+    Returns (normal, index_dir, middle_dir) as unit vectors.
+    Normal always points toward the camera (dorsal side of hand)
+    by using pinky→index order so it's consistent regardless of palm orientation.
+    """
     wrist     = _v(lms[WRIST])
     index_mcp = _v(lms[INDEX_MCP])
     pinky_mcp = _v(lms[PINKY_MCP])
+    # pinky→index cross wrist→index gives dorsal normal for right hand
     v1 = index_mcp - wrist
     v2 = pinky_mcp - wrist
-    normal    = np.cross(v1, v2)
-    normal   /= np.linalg.norm(normal) + 1e-6
+    normal = np.cross(v2, v1)          # flipped order vs before
+    normal /= np.linalg.norm(normal) + 1e-6
     index_dir = v1 / (np.linalg.norm(v1) + 1e-6)
     return normal, index_dir
 
 
 def _thumb_cmc(lms):
-    """CMC opposition — how much the thumb rotates to face across the palm."""
+    """
+    CMC opposition — elevation of thumb metacarpal below palm plane.
+    Flat/spread thumb → near 0. Thumb crossing palm → positive.
+    """
     normal, _ = _palm_frame(lms)
     thumb_dir = _v(lms[THUMB_MCP]) - _v(lms[THUMB_CMC])
     thumb_dir /= np.linalg.norm(thumb_dir) + 1e-6
-    elevation = np.dot(thumb_dir, normal)
+    # negative dot = thumb dips below palm (opposition direction)
+    elevation = -np.dot(thumb_dir, normal)
     return np.arcsin(np.clip(elevation, -1.0, 1.0))
 
 
@@ -92,7 +101,6 @@ def _thumb_abd(lms):
     normal, index_dir = _palm_frame(lms)
     thumb_dir = _v(lms[THUMB_MCP]) - _v(lms[THUMB_CMC])
     thumb_dir /= np.linalg.norm(thumb_dir) + 1e-6
-    # project both onto palm plane
     t = thumb_dir - np.dot(thumb_dir, normal) * normal
     t /= np.linalg.norm(t) + 1e-6
     i = index_dir - np.dot(index_dir, normal) * normal
