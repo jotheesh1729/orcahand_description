@@ -50,6 +50,10 @@ def _ensure_model():
         print("[setup] Done.")
 
 
+def _v(lm):
+    return np.array([lm.x, lm.y, lm.z])
+
+
 def _angle_at(a, b, c):
     ba = np.array([a.x - b.x, a.y - b.y, a.z - b.z])
     bc = np.array([c.x - b.x, c.y - b.y, c.z - b.z])
@@ -59,6 +63,41 @@ def _angle_at(a, b, c):
 
 def _flex(deg):
     return np.radians(180.0 - deg)
+
+
+def _palm_frame(lms):
+    """Returns (normal, index_dir) as unit vectors in landmark space."""
+    wrist     = _v(lms[WRIST])
+    index_mcp = _v(lms[INDEX_MCP])
+    pinky_mcp = _v(lms[PINKY_MCP])
+    v1 = index_mcp - wrist
+    v2 = pinky_mcp - wrist
+    normal    = np.cross(v1, v2)
+    normal   /= np.linalg.norm(normal) + 1e-6
+    index_dir = v1 / (np.linalg.norm(v1) + 1e-6)
+    return normal, index_dir
+
+
+def _thumb_cmc(lms):
+    """CMC opposition — how much the thumb rotates to face across the palm."""
+    normal, _ = _palm_frame(lms)
+    thumb_dir = _v(lms[THUMB_MCP]) - _v(lms[THUMB_CMC])
+    thumb_dir /= np.linalg.norm(thumb_dir) + 1e-6
+    elevation = np.dot(thumb_dir, normal)
+    return np.arcsin(np.clip(elevation, -1.0, 1.0))
+
+
+def _thumb_abd(lms):
+    """Abduction — angle of thumb away from index finger in the palm plane."""
+    normal, index_dir = _palm_frame(lms)
+    thumb_dir = _v(lms[THUMB_MCP]) - _v(lms[THUMB_CMC])
+    thumb_dir /= np.linalg.norm(thumb_dir) + 1e-6
+    # project both onto palm plane
+    t = thumb_dir - np.dot(thumb_dir, normal) * normal
+    t /= np.linalg.norm(t) + 1e-6
+    i = index_dir - np.dot(index_dir, normal) * normal
+    i /= np.linalg.norm(i) + 1e-6
+    return np.arccos(np.clip(np.dot(t, i), -1.0, 1.0))
 
 
 def landmarks_to_ctrl(lms, model):
@@ -82,6 +121,8 @@ def landmarks_to_ctrl(lms, model):
     set_act("right_p-mcp_actuator", _flex(_angle_at(lms[WRIST],      lms[PINKY_MCP],  lms[PINKY_PIP])))
     set_act("right_p-pip_actuator", _flex(_angle_at(lms[PINKY_MCP],  lms[PINKY_PIP],  lms[PINKY_DIP])))
 
+    set_act("right_t-cmc_actuator", _thumb_cmc(lms))
+    set_act("right_t-abd_actuator", _thumb_abd(lms))
     set_act("right_t-mcp_actuator", _flex(_angle_at(lms[THUMB_CMC],  lms[THUMB_MCP],  lms[THUMB_IP])))
     set_act("right_t-pip_actuator", _flex(_angle_at(lms[THUMB_MCP],  lms[THUMB_IP],   lms[THUMB_TIP])))
 
