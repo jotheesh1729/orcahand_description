@@ -147,14 +147,8 @@ def camera_thread(model):
                     ctrl = landmarks_to_ctrl(lms, model)
                     with _ctrl_lock:
                         _latest_ctrl = ctrl
-                    _draw_landmarks(img, lms, w, h)
-
-                cv2.imshow("D455 — Hand Tracking (q to quit)", img)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
         finally:
             cap.release()
-            cv2.destroyAllWindows()
 
 
 def main():
